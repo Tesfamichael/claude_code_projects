@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tesfamichael</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --border: #e8e8e8;
+      --text: #1a1a1a;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 80px 24px 120px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      margin-bottom: 48px;
+    }
+
+    .avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 600;
+      color: #fff;
+      flex-shrink: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .hero-text h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+
+    .hero-text p {
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 0.95rem;
+    }
+
+    /* ── Section ── */
+    section {
+      margin-bottom: 56px;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    /* ── Bio ── */
+    .bio {
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    /* ── Projects ── */
+    .projects {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .project-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .project-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 2px 12px rgba(37,99,235,0.08);
+    }
+
+    .project-info h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .project-info p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .arrow {
+      color: var(--muted);
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-left: 12px;
+    }
+
+    /* ── Contact Form ── */
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 120px;
+    }
+
+    button[type="submit"] {
+      align-self: flex-start;
+      padding: 11px 28px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    button[type="submit"]:hover {
+      background: var(--accent-hover);
+    }
+
+    .form-success {
+      display: none;
+      padding: 14px 18px;
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      border-radius: 8px;
+      color: #065f46;
+      font-size: 0.9rem;
+    }
+
+    /* ── Divider ── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin-bottom: 56px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-align: center;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 480px) {
+      .hero { flex-direction: column; align-items: flex-start; gap: 16px; }
+      main { padding: 48px 20px 80px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="avatar">T</div>
+      <div class="hero-text">
+        <h1>Tesfamichael</h1>
+        <p>Builder · Designer · Problem Solver</p>
+      </div>
+    </div>
+
+    <!-- Bio -->
+    <section>
+      <p class="section-label">About</p>
+      <p class="bio">
+        Hi, I'm Tesfamichael — a curious person who loves building things that matter.
+        I work at the intersection of technology and creativity, turning complex problems
+        into simple, elegant solutions. When I'm not coding, you'll find me reading,
+        exploring new ideas, or making a good cup of coffee.
+      </p>
+    </section>
+
+    <!-- Projects -->
+    <section>
+      <p class="section-label">Projects</p>
+      <div class="projects">
+
+        <a class="project-card" href="#" target="_blank" rel="noopener">
+          <div class="project-info">
+            <h3>Project One</h3>
+            <p>A short description of what this project does and why it matters.</p>
+          </div>
+          <span class="arrow">↗</span>
+        </a>
+
+        <a class="project-card" href="#" target="_blank" rel="noopener">
+          <div class="project-info">
+            <h3>Project Two</h3>
+            <p>Another project — maybe open source, a side hustle, or an experiment.</p>
+          </div>
+          <span class="arrow">↗</span>
+        </a>
+
+        <a class="project-card" href="#" target="_blank" rel="noopener">
+          <div class="project-info">
+            <h3>Project Three</h3>
+            <p>Yet another thing you've built that you're proud of.</p>
+          </div>
+          <span class="arrow">↗</span>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section>
+      <p class="section-label">Contact</p>
+      <form id="contact-form">
+        <div class="field">
+          <label for="name">Name</label>
+          <input type="text" id="name" placeholder="Your name" required />
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="you@example.com" required />
+        </div>
+        <div class="field">
+          <label for="message">Message</label>
+          <textarea id="message" placeholder="What's on your mind?" required></textarea>
+        </div>
+        <button type="submit">Send message</button>
+        <div class="form-success" id="form-success">
+          ✓ Thanks! I'll get back to you soon.
+        </div>
+      </form>
+    </section>
+
+    <footer>
+      <p>© 2026 Tesfamichael · tesfamichael@gmail.com</p>
+    </footer>
+
+  </main>
+
+  <script>
+    document.getElementById('contact-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      this.querySelectorAll('input, textarea, button').forEach(el => el.disabled = true);
+      const success = document.getElementById('form-success');
+      success.style.display = 'block';
+    });
+  </script>
+</body>
+</html>
