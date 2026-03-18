@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useFilter } from '@/hooks/useFilter';
 import SummaryCards from '@/components/SummaryCards';
@@ -7,10 +8,12 @@ import CategoryBreakdown from '@/components/CategoryBreakdown';
 import ExpenseForm from '@/components/ExpenseForm';
 import FilterBar from '@/components/FilterBar';
 import ExpenseList from '@/components/ExpenseList';
+import ExportModal from '@/components/ExportModal';
 
 export default function Home() {
   const { expenses, loaded, addExpense, updateExpense, deleteExpense, exportCSV } = useExpenses();
   const { filter, filtered, updateFilter, resetFilter } = useFilter(expenses);
+  const [showExport, setShowExport] = useState(false);
 
   if (!loaded) {
     return (
@@ -29,7 +32,18 @@ export default function Home() {
             <h1 className="text-xl font-bold text-gray-900">💰 Expense Tracker</h1>
             <p className="text-xs text-gray-400 mt-0.5">Track &amp; manage your spending</p>
           </div>
-          <span className="text-sm text-gray-500 hidden sm:block">{expenses.length} expense{expenses.length !== 1 ? 's' : ''} total</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-500 hidden sm:block">
+              {expenses.length} expense{expenses.length !== 1 ? 's' : ''} total
+            </span>
+            <button
+              onClick={() => setShowExport(true)}
+              disabled={expenses.length === 0}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors shadow-sm"
+            >
+              <span>↑</span> Export Data
+            </button>
+          </div>
         </div>
       </header>
 
@@ -52,6 +66,11 @@ export default function Home() {
         {/* List */}
         <ExpenseList expenses={filtered} onDelete={deleteExpense} onUpdate={updateExpense} />
       </main>
+
+      {/* Export Modal */}
+      {showExport && (
+        <ExportModal expenses={expenses} onClose={() => setShowExport(false)} />
+      )}
     </div>
   );
 }
