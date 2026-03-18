@@ -29,7 +29,16 @@ export default function Home() {
             <h1 className="text-xl font-bold text-gray-900">💰 Expense Tracker</h1>
             <p className="text-xs text-gray-400 mt-0.5">Track &amp; manage your spending</p>
           </div>
-          <span className="text-sm text-gray-500 hidden sm:block">{expenses.length} expense{expenses.length !== 1 ? 's' : ''} total</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-500 hidden sm:block">{expenses.length} expense{expenses.length !== 1 ? 's' : ''} total</span>
+            <button
+              onClick={exportCSV}
+              disabled={expenses.length === 0}
+              className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors flex items-center gap-2"
+            >
+              ↓ Export Data
+            </button>
+          </div>
         </div>
       </header>
 

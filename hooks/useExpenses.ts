@@ -53,9 +53,9 @@ export function useExpenses() {
   }, []);
 
   const exportCSV = useCallback(() => {
-    const header = 'Date,Amount,Category,Description\n';
+    const header = 'Date,Category,Amount,Description\n';
     const rows = expenses
-      .map(e => `${e.date},${e.amount.toFixed(2)},${e.category},"${e.description.replace(/"/g, '""')}"`)
+      .map(e => `${e.date},${e.category},${e.amount.toFixed(2)},"${e.description.replace(/"/g, '""')}"`)
       .join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
