@@ -26,8 +26,15 @@ Static file — open `index.html` directly in a browser. No server needed.
 ## Git & GitHub
 
 - Remote: `https://github.com/Tesfamichael/claude_code_projects`
-- A `post-commit` hook auto-pushes to `origin main` after every commit.
-- Workflow: `git add . && git commit -m "..."` — the push happens automatically.
+- Branch: `main`
+- A `post-commit` hook exists but **must not be relied upon** — always explicitly push after every commit.
+- **Required workflow for every change:**
+  ```bash
+  git add .
+  git commit -m "describe the change"
+  git push origin main
+  ```
+- Never assume a commit reached GitHub without running `git push` explicitly. Verify with `git status` — if the branch shows "ahead of origin" it has not been pushed.
 
 ## GitHub Actions
 
