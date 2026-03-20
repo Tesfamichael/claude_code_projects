@@ -4,59 +4,210 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A personal expense tracking web app built with Next.js 14, TypeScript, and Tailwind CSS. Data is persisted in `localStorage` — no backend or database.
+A personal expense tracking web app built with Next.js 16, React 19, TypeScript, and Tailwind CSS 4. All data is stored in the browser's `localStorage` — there is no backend, database, or authentication. The app runs entirely client-side.
+
+**Stack:**
+- Next.js 16.1.7 with App Router
+- React 19 with client components (`'use client'` directive required on all interactive files)
+- TypeScript 5
+- Tailwind CSS 4 (via `@tailwindcss/postcss`)
+- No third-party component libraries, no charting libraries — all UI is hand-built
+
+---
+
+## Commands
+
+```bash
+npm run dev      # Start dev server at http://localhost:3000
+npm run build    # Production build — run this to catch TypeScript errors before committing
+npm run lint     # ESLint check
+npm run start    # Start production server (requires build first)
+```
+
+Always run `npm run build` before committing to catch TypeScript errors that the dev server tolerates.
+
+---
 
 ## Architecture
 
+### Directory Structure
+
 ```
-app/           ← Next.js App Router pages and layout
-components/    ← UI components (one file per component)
-hooks/         ← React hooks (useExpenses, useFilter)
-lib/           ← Pure utility/service modules (no React)
-types/         ← TypeScript type definitions
+app/           ← Next.js App Router (layout + single page)
+components/    ← UI components, one per file, all client components
+hooks/         ← React hooks (data management and filtering)
+lib/           ← Pure logic modules — no React imports, no JSX
+types/         ← Shared TypeScript interfaces and union types
+.claude/
+  commands/    ← Custom Claude Code slash commands
 ```
 
-**Data flow:** `useExpenses` hook owns all expense CRUD and reads/writes to `localStorage`. Components receive data and callbacks as props — no global state manager.
+### Data Flow
 
-**Key files:**
-- `types/expense.ts` — all shared types (`Expense`, `Category`, `FilterState`, etc.)
-- `lib/constants.ts` — category list, colors, icons, storage key
-- `lib/utils.ts` — formatting and aggregation utilities
-- `hooks/useExpenses.ts` — localStorage persistence + CRUD + CSV export
-- `hooks/useFilter.ts` — search/category/date filtering with `useMemo`
-- `app/page.tsx` — main page composing all components
+```
+localStorage
+    ↑↓
+useExpenses (hook)          ← single source of truth for all expense data
+    ↓ expenses[]
+    ├── useFilter (hook)    ← derives filtered[] via useMemo
+    │       ↓ filtered[]
+    │   ExpenseList, FilterBar
+    │
+    ├── SummaryCards        ← receives full expenses[], computes totals inline
+    ├── SpendingChart       ← receives full expenses[], calls getLast6MonthsData()
+    ├── CategoryBreakdown   ← receives full expenses[], calls getCategoryTotals()
+    ├── ExpenseForm         ← calls addExpense() callback
+    └── CloudExportHub      ← receives full expenses[], uses lib/cloudExport.ts
+```
 
-## Running the App
+**Key rule:** Components never touch `localStorage` directly. All reads and writes go through `useExpenses`.
+
+### The `loaded` Flag
+
+`useExpenses` exposes a `loaded: boolean` that is `false` until the initial `localStorage` read completes. `app/page.tsx` renders a loading state until `loaded` is `true`. This prevents a flash of empty UI before hydration. Any new top-level consumer of `useExpenses` must also respect this flag.
+
+---
+
+## Key Files and Their Responsibilities
+
+### `types/expense.ts`
+Single source of truth for all shared types. Add new types here — never define types inline in components or hooks.
+
+- `Category` — union type for the 6 expense categories
+- `Expense` — the core data shape stored in localStorage
+- `ExpenseFormData` — form state (amount is `string` here, not `number`, to support partial input)
+- `FilterState` — shape of the filter bar's state
+
+### `lib/constants.ts`
+All category-related constants: `CATEGORIES` array, `CATEGORY_COLORS`, `CATEGORY_ICONS`, `STORAGE_KEY`. Import from here — never hardcode category names, colors, or the localStorage key anywhere else.
+
+### `lib/utils.ts`
+Pure formatting and aggregation functions. All are stateless and have no React dependency. Add new data-processing logic here, not in components.
+
+- `formatCurrency(amount)` — USD currency formatting via `Intl.NumberFormat`
+- `formatDate(dateStr)` — Appends `T00:00:00` before parsing to avoid timezone offset shifting the displayed date
+- `getMonthlyTotal(expenses)` — filters to current month by `YYYY-MM` prefix match
+- `getCategoryTotals(expenses)` — returns `Record<category, total>`
+- `getLast6MonthsData(expenses)` — returns 6-element array for the bar chart
+
+### `lib/cloudExport.ts`
+Export service layer used by `CloudExportHub`. Contains:
+- Type definitions: `ExportTemplate`, `CloudDestination`, `ScheduleFrequency`, `ExportRecord`, `ScheduleConfig`
+- `TEMPLATES` and `DESTINATIONS` config maps — add new templates/destinations here, the UI renders them automatically
+- localStorage persistence for export history (`export_history_v3`, capped at 20 records) and schedule config (`export_schedule_v3`)
+- `filterExpensesByTemplate()` — applies template-specific date scoping
+- `generateCSV()` — template-aware CSV builder (different headers/fields per template)
+- `simulateCloudExport()` — dispatches export; only `download` destination triggers a real file download; all others are currently simulated
+
+**Known issues in this file to be aware of:**
+- `filterExpensesByTemplate` and `buildCategoryAnalysis` are not memoized — they run on every render in `CloudExportHub`. Add `useMemo` if performance becomes an issue.
+- Share links generated by `generateShareLink()` point to `https://expensetracker.app/shared/<id>` which does not exist. Do not surface these as real to users until a real sharing backend exists.
+- The `'Encrypted'` status badge in `CloudExportHub` header is cosmetic — no encryption is performed.
+- `ScheduleConfig` is saved to localStorage but no actual scheduling mechanism executes it.
+
+### `hooks/useExpenses.ts`
+Manages the full lifecycle of expense data. The `exportCSV` function here is the original basic export (all expenses, no filtering). New export functionality should go in `lib/exporters.ts` or `lib/cloudExport.ts`, not added to this hook.
+
+ID generation uses `Date.now().toString(36) + Math.random().toString(36).slice(2)` — not cryptographically secure but sufficient for a localStorage-only app.
+
+### `hooks/useFilter.ts`
+Derives a filtered view of expenses using `useMemo`. The `filtered` array recomputes only when `expenses` or `filter` changes. Filtering is purely client-side string/date prefix comparison — no server involvement.
+
+---
+
+## Component Conventions
+
+- All components use Tailwind for styling — no CSS modules, no inline `style` objects except for dynamic values (e.g., percentage widths for progress bars, category colors)
+- `CATEGORY_COLORS` values are hex strings — when used in Tailwind they must be in `style={{ backgroundColor: color }}`, not in className (dynamic Tailwind classes are not safe-listed)
+- Modal/panel components manage their own Escape key listener and backdrop click via `useEffect` + `useRef`. Pattern:
+  ```ts
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [onClose]);
+  ```
+- `setTimeout` callbacks that set state must be cleaned up on unmount to avoid React warnings. Use `useRef` to store the timer ID and clear in the cleanup function.
+
+---
+
+## Export Feature — Branch History
+
+Three implementations exist on separate branches for comparison. See `code-analysis.md` (on `feature-data-export-v3`) for the full technical evaluation.
+
+| Branch | Approach | Status |
+|---|---|---|
+| `expense-tracker-ai` | Original clean app, no export UI | Baseline |
+| `feature-data-export-v1` | One-button CSV export in header | Simple, functional |
+| `feature-data-export-v2` | Modal with format selector, date/category filters, preview table | Recommended production baseline |
+| `feature-data-export-v3` | Cloud Export Hub: 4-tab slide-in panel, templates, history, scheduling | Current branch — some features simulated |
+
+**Recommended production approach (from code-analysis.md):** Use v2 as the base, add v3's export history module and template presets as date-range shortcuts.
+
+---
+
+## Git Workflow
+
+**Every change must follow all three steps — do not skip the push:**
 
 ```bash
-cd "C:/Users/tesfa/expense-tracker-ai"
-npm run dev        # starts at http://localhost:3000
-npm run build      # production build (use to verify no TS errors before committing)
+git add <specific files>               # never use git add -A blindly
+git commit -m "type: description"
+git push origin <current-branch>
 ```
 
-## Git & GitHub
+After pushing, confirm with `git status` — it must say "up to date with origin". If it says "ahead by N commits", the push did not happen.
 
-- Remote: `https://github.com/Tesfamichael/claude_code_projects`
-- Each feature lives on its own branch (e.g. `feature-data-export-v1`)
-- **Required workflow for every change — always do all three steps:**
-  ```bash
-  git add <files>
-  git commit -m "describe the change"
-  git push origin <current-branch>
-  ```
-- **Never rely on the post-commit hook alone to push.** Always run `git push` explicitly after every commit.
-- Verify success: after pushing, `git status` should show "Your branch is up to date with 'origin/...'". If it says "ahead by N commits", the push did not happen.
+**Do not rely on the post-commit hook** to push. Always run `git push` explicitly.
 
-## Branch Structure
+### Commit message format
+```
+feat: add new feature
+fix: correct a bug
+docs: update documentation
+refactor: restructure without behavior change
+style: formatting/visual only
+```
 
-| Branch | Purpose |
-|---|---|
-| `expense-tracker-ai` | Original clean app (no export feature) |
-| `feature-data-export-v1` | Simple one-button CSV export |
-| `feature-data-export-v2` | Advanced modal: multi-format, filters, preview |
-| `feature-data-export-v3` | Cloud Export Hub: templates, history, scheduling |
+### Worktrees
+Two active worktrees for parallel feature development:
 
-## Export Feature Notes
+```
+C:/Users/tesfa/expense-tracker-ai          [feature-data-export-v3]  ← main workspace
+C:/Users/tesfa/expense-tracker-export      [feature/data-export]
+C:/Users/tesfa/expense-tracker-analytics   [feature/analytics-dashboard]
+```
 
-- The base `useExpenses` hook already contains a basic `exportCSV` — new export features should go in `lib/exporters.ts` or `lib/cloudExport.ts`, not in the hook.
-- See `code-analysis.md` (on `feature-data-export-v3`) for a full comparison of the three export implementations and a recommendation for the production hybrid approach.
+Each worktree has its own working directory and branch but shares the same `.git` folder. Run `npm install` once per worktree. Run `npm run dev` in each worktree — Next.js will auto-select an available port (3000, 3001, etc.).
+
+---
+
+## Custom Slash Commands
+
+Located in `.claude/commands/`:
+
+| Command | File | Purpose |
+|---|---|---|
+| `/parallel-work <features>` | `parallel-work.md` | Sets up git worktrees for parallel feature development |
+| `/integrate-parallel-work <features>` | `integrate-parallel-work.md` | Merges parallel worktree branches into an integration branch |
+
+---
+
+## localStorage Keys
+
+| Key | Content | Set by |
+|---|---|---|
+| `expense_tracker_data` | `Expense[]` — all user expenses | `useExpenses` |
+| `export_history_v3` | `ExportRecord[]` — last 20 exports | `lib/cloudExport.ts` |
+| `export_schedule_v3` | `ScheduleConfig` — auto-export schedule | `lib/cloudExport.ts` |
+
+All localStorage reads are wrapped in `try/catch` with sensible defaults. Do not add new localStorage keys without documenting them here.
+
+---
+
+## Known Issues and Future Work
+
+- **Duplicate export trigger:** `FilterBar` has its own "Export CSV" button calling `useExpenses.exportCSV` (unfiltered, all expenses). The `CloudExportHub` is a separate, more powerful export path. The FilterBar button should either be removed or scoped to export the currently filtered view.
+- **No tests:** There is no test setup. Before adding one, consider Vitest for unit tests on `lib/utils.ts` and `lib/cloudExport.ts` (pure functions, no DOM required).
+- **CSV formula injection:** Expense descriptions are not sanitized for leading `=`, `+`, `-`, `@` characters. A description like `=CMD|' /C calc'!A0` will appear in exported CSVs and could execute in spreadsheet applications. Sanitize by prefixing such descriptions with a tab or single quote before writing to CSV.
+- **No import:** There is currently no way to import expenses from a file. The `full-backup` template in `lib/cloudExport.ts` includes `id` and `createdAt` fields anticipating a future import feature.
